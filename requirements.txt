@@ -11,5 +11,5 @@ openai~=1.60.1
 SQLAlchemy~=2.0.30
 alembic~=1.13.1
 asyncpg~=0.29.0
-fastapi~=0.115.8
+"fastapi[standard]"
 asyncio~=3.4.3
