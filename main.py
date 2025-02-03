@@ -23,7 +23,7 @@ async def read_item(request: SearchRequest) -> SearchResponse:
             is_success=False
         )
     result = generate_text(request.prompt, model=request.model)
-    logging.info(f"Запрос из источника {request.source} к модели {request.model}")
+    logging.info(f"Запрос из источника {request.source.value} к модели {request.model}")
     response = SearchResponse(
         answer=result.refusal or result.content,
         is_refusal=result.refusal,

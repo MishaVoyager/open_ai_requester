@@ -1,15 +1,15 @@
-from enum import Enum
+from enum import Enum, StrEnum
 
 from pydantic import BaseModel
 
 
-class Source(Enum):
-    YANDEX = 1
+class Source(StrEnum):
+    YANDEX = "YANDEX"
 
 
 class SearchRequest(BaseModel):
     prompt: str
-    source: Enum
+    source: Source
     model: str = "gpt-4o-mini"
 
 
