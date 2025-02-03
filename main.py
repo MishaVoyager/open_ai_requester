@@ -49,7 +49,7 @@ async def answer_to_alice_user(request: Request) -> dict:
     question = request_data['request']['original_utterance']
     user_id = request_data["session"]["user_id"]
     if "ответ" not in question:
-        response["response"]["text"] = "Через 10 секунд скажи: скажи ответ"
+        response["response"]["text"] = "Через 10 секунд попроси Алису: скажи ответ"
         asyncio.create_task(ask(question, user_id))
         return response
     else:
