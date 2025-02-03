@@ -2,12 +2,32 @@ import logging
 from enum import StrEnum
 from typing import BinaryIO, Dict, Optional
 
-from openai import OpenAI
+from openai import OpenAI, AsyncOpenAI
 from openai.types.chat import ChatCompletionMessage
 
 from config.settings import CommonSettings
 
 token = CommonSettings().OPENAI_API_KEY
+
+
+async def generate_text_async(
+        content: str,
+        model: str = "gpt-4o-mini",
+        developer_message: Optional[Dict] = None,
+        n: int = 1) -> ChatCompletionMessage:
+    messages = [
+        {"role": "user", "content": f"{content}"}
+    ]
+    if developer_message:
+        messages.append(developer_message)
+    completion = await get_async_client().chat.completions.create(
+        model=model,
+        store=True,
+        messages=messages,  # type: ignore
+        n=n
+    )
+    logging.info(f"Запрос к {completion.model} использовал {completion.usage.total_tokens} токенов")
+    return completion.choices[0].message
 
 
 def generate_text(
@@ -108,6 +128,14 @@ class GPTModel(StrEnum):
 
 def get_client() -> OpenAI:
     return OpenAI(
+        api_key=token,
+        organization="org-ivGGIRGxUk5rZmvxkoypdUUy",
+        project="proj_t7kgt6Awz7m2knmH4gL0xeh2"
+    )
+
+
+def get_async_client() -> AsyncOpenAI:
+    return AsyncOpenAI(
         api_key=token,
         organization="org-ivGGIRGxUk5rZmvxkoypdUUy",
         project="proj_t7kgt6Awz7m2knmH4gL0xeh2"

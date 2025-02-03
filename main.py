@@ -1,11 +1,11 @@
+import asyncio
 import logging
 
-import asyncio
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 
 from config.settings import CommonSettings
 from domain.models import SearchRequest, SearchResponse
-from helpers.open_ai_helper import generate_text
+from helpers.open_ai_helper import generate_text, generate_text_async
 
 app = FastAPI()
 
@@ -16,7 +16,7 @@ async def read_root() -> dict[str, str]:
 
 
 @app.post("/search", response_model=SearchResponse)
-async def read_item(request: SearchRequest) -> SearchResponse:
+async def search(request: SearchRequest) -> SearchResponse:
     if CommonSettings().DRY_MODE:
         await asyncio.sleep(10)
         return SearchResponse(
@@ -32,3 +32,44 @@ async def read_item(request: SearchRequest) -> SearchResponse:
         is_success=True
     )
     return response
+
+
+answers: dict = dict()
+
+
+@app.post("/alice")
+async def answer_to_alice_user(request: Request) -> dict:
+    request_data = await request.json()
+    response = get_response_template(request_data)
+    if not request_data['request']['original_utterance']:
+        response["text"] = "Задавайте вопросы - получайте ответы!"
+        return response
+    question = request_data['request']['original_utterance']
+    user_id = request_data["session"]["session_user_id"]
+    if "скажи ответ" not in question:
+        response["text"] = "Через 10 секунд скажите: скажи ответ"
+        asyncio.create_task(ask(question, user_id))
+        return response
+    else:
+        response["text"] = answers[user_id]
+        del answers[user_id]
+        return response
+
+
+def get_response_template(request_data: dict) -> dict:
+    return {
+        'session': request_data['session'],
+        'version': request_data['version'],
+        'response': {
+            'end_session': False
+        }
+    }
+
+
+async def ask(question: str, user_id: str) -> None:
+    if CommonSettings().DRY_MODE:
+        await asyncio.sleep(10)
+        answers[user_id] = "Ответик пришел"
+    else:
+        result = await generate_text_async(question)
+        answers[user_id] = result.refusal or result.content
