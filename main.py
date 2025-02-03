@@ -18,7 +18,7 @@ async def read_root() -> dict[str, str]:
 @app.post("/search", response_model=SearchResponse)
 async def read_item(request: SearchRequest) -> SearchResponse:
     if CommonSettings().DRY_MODE:
-        await asyncio.sleep(10000)
+        await asyncio.sleep(10)
         return SearchResponse(
             answer="Сервер запущен в тестовом режиме. Запросы к OpenAI временно не выполняются",
             is_refusal=False,
