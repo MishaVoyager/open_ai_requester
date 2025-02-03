@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+import uvicorn
 from fastapi import FastAPI, Request
 
 from config.settings import CommonSettings
@@ -74,3 +75,11 @@ async def ask(question: str, user_id: str) -> None:
     else:
         result = await generate_text_async(question)
         answers[user_id] = result.refusal or result.content
+
+
+if __name__ == "__main__":
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+    )
+    uvicorn.run(app, host="0.0.0.0", port=7999)
