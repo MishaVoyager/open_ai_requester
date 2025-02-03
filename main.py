@@ -39,19 +39,20 @@ answers: dict = dict()
 
 @app.post("/alice")
 async def answer_to_alice_user(request: Request) -> dict:
+    logging.info(str(request))
     request_data = await request.json()
     response = get_response_template(request_data)
     if not request_data['request']['original_utterance']:
-        response["text"] = "Задавайте вопросы - получайте ответы!"
+        response["response"]["text"] = "Задавайте вопросы - получайте ответы!"
         return response
     question = request_data['request']['original_utterance']
     user_id = request_data["session"]["session_user_id"]
     if "скажи ответ" not in question:
-        response["text"] = "Через 10 секунд скажите: скажи ответ"
+        response["response"]["text"] = "Через 10 секунд скажите: скажи ответ"
         asyncio.create_task(ask(question, user_id))
         return response
     else:
-        response["text"] = answers[user_id]
+        response["response"]["text"] = answers[user_id]
         del answers[user_id]
         return response
 
