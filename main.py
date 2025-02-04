@@ -51,8 +51,8 @@ async def answer_to_alice_user(request: Request) -> dict:
     question: str = request_data['request']['original_utterance']
     user_id = request_data["session"]["user_id"]
     if "ответ" not in question.lower():
-        answer = "Отправила ваш запрос в OpenAI. Ответ занимает некоторое время, поскольку система неспешная. Зато " \
-                 "получается качественный результат. Ну вот, теперь можешь сказать: скажи ответ"
+        answer = "Отправила ваш запрос в OpenAI. Ответ занимает некоторое время, зато получается качественным. " \
+                 "Попробуйте сейчас сказать: скажи ответ"
         response["response"]["text"] = answer
         asyncio.create_task(ask(question, user_id))
     else:
