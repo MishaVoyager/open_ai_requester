@@ -7,6 +7,7 @@ from fastapi import FastAPI, Request
 from config.settings import CommonSettings
 from domain.models import SearchRequest, SearchResponse
 from helpers.open_ai_helper import generate_text, generate_text_async
+from helpers.timehelper import measure_time
 
 app = FastAPI()
 
@@ -70,6 +71,7 @@ def get_response_template(request_data: dict) -> dict:
     }
 
 
+@measure_time
 async def ask(question: str, user_id: str) -> None:
     if CommonSettings().DRY_MODE:
         await asyncio.sleep(10)
