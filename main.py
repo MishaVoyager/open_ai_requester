@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 
 import uvicorn
 from fastapi import FastAPI, Request
@@ -47,9 +48,9 @@ async def answer_to_alice_user(request: Request) -> dict:
     if not request_data['request']['original_utterance']:
         response["response"]["text"] = "Я отвечу при помощи OpenAI. Спрашивайте!"
         return response
-    question = request_data['request']['original_utterance']
+    question: str = request_data['request']['original_utterance']
     user_id = request_data["session"]["user_id"]
-    if "ответ" not in question:
+    if "ответ" not in question.lower():
         answer = "Отправила ваш запрос в OpenAI. Ответ занимает некоторое время, поскольку система неспешная. Зато " \
                  "получается качественный результат. Ну вот, теперь можешь сказать: скажи ответ"
         response["response"]["text"] = answer
@@ -76,7 +77,7 @@ def get_response_template(request_data: dict) -> dict:
 @measure_time_async
 async def ask(question: str, user_id: str) -> None:
     if CommonSettings().DRY_MODE:
-        await asyncio.sleep(10)
+        await asyncio.sleep(random.randint(3, 25))
         answers[user_id] = "Ответик пришел"
     else:
         result = await generate_text_async(question)
