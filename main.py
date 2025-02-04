@@ -54,11 +54,13 @@ async def answer_to_alice_user(request: Request) -> dict:
                  "получается качественный результат. Ну вот, теперь можешь сказать: скажи ответ"
         response["response"]["text"] = answer
         asyncio.create_task(ask(question, user_id))
-        return response
     else:
-        response["response"]["text"] = f"{answers[user_id]}"
-        del answers[user_id]
-        return response
+        if user_id not in answers:
+            response["response"]["text"] = "Ответ еще не готов"
+        else:
+            response["response"]["text"] = f"{answers[user_id]}"
+            del answers[user_id]
+    return response
 
 
 def get_response_template(request_data: dict) -> dict:
