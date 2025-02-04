@@ -57,7 +57,7 @@ async def answer_to_alice_user(request: Request) -> dict:
         asyncio.create_task(ask(question, user_id))
     else:
         if user_id not in answers:
-            response["response"]["text"] = "Ответ еще не был готов. Попробуйте снова сказать: скажи ответ"
+            response["response"]["text"] = "Ответ еще не готов. Попробуйте снова сказать: скажи ответ"
         else:
             response["response"]["text"] = f"{answers[user_id]}"
             del answers[user_id]
