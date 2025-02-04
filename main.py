@@ -49,11 +49,13 @@ async def answer_to_alice_user(request: Request) -> dict:
     question = request_data['request']['original_utterance']
     user_id = request_data["session"]["user_id"]
     if "ответ" not in question:
-        response["response"]["text"] = "Через 10 секунд попроси Алису: скажи ответ"
+        answer = "Отправила ваш запрос в OpenAI. Ответ занимает некоторое время, поскольку система неспешная. Зато " \
+                 "получается качественный результат. Ну вот, теперь можешь сказать: скажи ответ"
+        response["response"]["text"] = answer
         asyncio.create_task(ask(question, user_id))
         return response
     else:
-        response["response"]["text"] = answers[user_id]
+        response["response"]["text"] = f"{answers[user_id]}"
         del answers[user_id]
         return response
 
