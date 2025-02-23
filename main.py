@@ -30,7 +30,7 @@ async def search(request: SearchRequest) -> SearchResponse:
     logging.info(f"Запрос из источника {request.source.value} к модели {request.model}")
     response = SearchResponse(
         answer=result.refusal or result.content,
-        is_refusal=result.refusal,
+        is_refusal=result.refusal is not None,
         is_success=True
     )
     return response
