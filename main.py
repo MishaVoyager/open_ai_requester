@@ -21,7 +21,6 @@ async def read_root() -> dict[str, str]:
 @app.post("/search", response_model=SearchResponse)
 async def search(request: SearchRequest) -> SearchResponse:
     if CommonSettings().DRY_MODE:
-        await asyncio.sleep(10)
         return SearchResponse(
             answer="Сервер запущен в тестовом режиме. Запросы к OpenAI временно не выполняются",
             is_refusal=False,
@@ -63,6 +62,10 @@ async def answer_to_alice_user(request: Request) -> dict:
             del answers[user_id]
     return response
 
+# Запрос в облачной функции яндекса:
+# def handler(event, context):
+#     response = requests.post(url="address/alice", json=event)
+#     return response.json()
 
 def get_response_template(request_data: dict) -> dict:
     return {

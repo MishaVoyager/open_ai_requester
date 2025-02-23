@@ -5,11 +5,12 @@ from pydantic import BaseModel
 
 class Source(StrEnum):
     YANDEX = "YANDEX"
+    OTHER = "OTHER"
 
 
 class SearchRequest(BaseModel):
     prompt: str
-    source: Source
+    source: Source = Source.OTHER
     model: str = "gpt-4o-mini"
 
 
