@@ -62,6 +62,7 @@ async def answer_to_alice_user(request: Request) -> dict:
             del answers[user_id]
     return response
 
+
 # Запрос в облачной функции яндекса:
 # def handler(event, context):
 #     response = requests.post(url="address/alice", json=event)
@@ -92,4 +93,6 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
     )
-    uvicorn.run(app, host="0.0.0.0", port=7999)
+    uvicorn.run(app, port=443, host='0.0.0.0',
+                ssl_keyfile="/etc/letsencrypt/live/misha-voyager.com/privkey.pem",
+                ssl_certfile="/etc/letsencrypt/live/misha-voyager.com/fullchain.pem")
