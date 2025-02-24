@@ -1,6 +1,7 @@
 services:
   app:
     build: .
+    container_name: voyager_server
     ports:
       - 7999:7999
     expose:
@@ -8,6 +9,7 @@ services:
     env_file: ".env"
   nginx:
     image: nginx:latest
+    container_name: voyager_nginx
     ports:
       - "80:80"    # HTTP
       - "443:443"  # HTTPS
