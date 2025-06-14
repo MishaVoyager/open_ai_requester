@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 
 from config.settings import CommonSettings
 from domain.models import SearchRequest, SearchResponse
-from helpers.open_ai_helper import generate_text, generate_text_async
+from helpers.open_ai_helper import generate_text, generate_text_async, GPTModel
 from helpers.timehelper import measure_time_async
 
 app = FastAPI()
@@ -36,37 +36,20 @@ async def search(request: SearchRequest) -> SearchResponse:
     return response
 
 
-answers: dict = dict()
-
-
 @app.post("/alice")
 async def answer_to_alice_user(request: Request) -> dict:
     request_data = await request.json()
     logging.info(str(request_data))
     response = get_response_template(request_data)
     if not request_data['request']['original_utterance']:
-        response["response"]["text"] = "Я отвечу при помощи OpenAI. Спрашивайте!"
+        response["response"]["text"] = "Спрашивайте!"
         return response
     question: str = request_data['request']['original_utterance']
     user_id = request_data["session"]["user_id"]
-    if "ответ" not in question.lower():
-        answer = "Отправила ваш запрос в OpenAI. Ответ занимает некоторое время, зато получается качественным. " \
-                 "Попробуйте сейчас сказать: скажи ответ"
-        response["response"]["text"] = answer
-        asyncio.create_task(ask(question, user_id))
-    else:
-        if user_id not in answers:
-            response["response"]["text"] = "Ответ еще не готов. Попробуйте снова сказать: скажи ответ"
-        else:
-            response["response"]["text"] = f"{answers[user_id]}"
-            del answers[user_id]
+    answer = await ask(question, user_id)
+    response["response"]["text"] = answer
     return response
 
-
-# Запрос в облачной функции яндекса:
-# def handler(event, context):
-#     response = requests.post(url="address/alice", json=event)
-#     return response.json()
 
 def get_response_template(request_data: dict) -> dict:
     return {
@@ -79,13 +62,13 @@ def get_response_template(request_data: dict) -> dict:
 
 
 @measure_time_async
-async def ask(question: str, user_id: str) -> None:
+async def ask(question: str, user_id: str) -> str:
     if CommonSettings().DRY_MODE:
         await asyncio.sleep(random.randint(3, 25))
-        answers[user_id] = "Ответик пришел"
+        return "Ответик пришел"
     else:
-        result = await generate_text_async(question)
-        answers[user_id] = result.refusal or result.content
+        result = await generate_text_async(question, GPTModel.gpt_41_nano.value)
+        return result.refusal or result.content
 
 
 if __name__ == "__main__":
@@ -94,3 +77,8 @@ if __name__ == "__main__":
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
     )
     uvicorn.run(app, host="0.0.0.0", port=7999)
+
+# Запрос в облачной функции яндекса:
+# def handler(event, context):
+#     response = requests.post(url="address/alice", json=event)
+#     return response.json()
