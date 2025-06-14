@@ -47,6 +47,7 @@ async def answer_to_alice_user(request: Request) -> dict:
     question: str = request_data['request']['original_utterance']
     user_id = request_data["session"]["user_id"]
     answer = await ask(question, user_id)
+    logging.info(f"answer: {answer}")
     response["response"]["text"] = answer
     return response
 
@@ -68,7 +69,7 @@ async def ask(question: str, user_id: str) -> str:
         return "Ответик пришел"
     else:
         result = await generate_text_async(question, GPTModel.gpt_41_nano.value)
-        return result.refusal or result.content
+        return result.refusal if result.refusal else result.content
 
 
 if __name__ == "__main__":
