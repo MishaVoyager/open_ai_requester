@@ -1,9 +1,18 @@
-ARG PYTHON_VERSION=3.12.4
-FROM python:${PYTHON_VERSION}-slim AS base
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+FROM python:3.12-slim
+
 WORKDIR /app
-COPY . .
-RUN python -m pip install -r requirements.txt
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY main.py .
+COPY config/ config/
+COPY domain/ domain/
+COPY helpers/ helpers/
+
 EXPOSE 7999
-CMD python -m main
+
+CMD ["python", "-m", "main"]
