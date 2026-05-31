@@ -65,7 +65,7 @@ docker compose up -d --build
 Контейнеры:
 
 - **voyager_server** — FastAPI на порту `7999`
-- **voyager_nginx** — nginx на `80`/`443`, SSL из `/etc/letsencrypt`
+- **voyager_nginx** — nginx на `80`/`443`, SSL из `/etc/letsencrypt`, прокси `/callback` и `/health` на Spotify OAuth бота (`host:8888`)
 
 Проверка:
 
