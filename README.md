@@ -2,103 +2,84 @@
 
 HTTP-сервис на FastAPI для запросов к OpenAI: универсальный поиск (`/search`) и навык Яндекс.Алисы (`/alice`). В продакшене доступен по HTTPS через nginx на домене **mishavoyager.fyi**.
 
-## Структура репозитория
+Репозиторий: `/root/projects/open_ai_requester`
+
+## Структура
 
 ```
 .
-├── main.py              # FastAPI-приложение, точка входа (uvicorn :7999)
-├── compose.yml          # Docker Compose: app + nginx
-├── Dockerfile           # Образ приложения (Python 3.12)
-├── nginx.conf           # HTTPS, редирект 80→443, прокси на app:7999
-├── requirements.txt     # Python-зависимости
-├── mypy.ini             # Настройки mypy
+├── main.py                 # FastAPI-приложение (uvicorn :7999)
+├── docker-compose.yml      # Docker Compose: app + nginx
+├── Dockerfile
+├── nginx.conf              # HTTPS, прокси на app:7999 и Spotify OAuth
+├── requirements.txt        # runtime-зависимости
+├── requirements-dev.txt    # mypy, pytest
+├── .env.example            # шаблон переменных окружения
 ├── config/
-│   └── settings.py      # OPENAI_API_KEY, DRY_MODE из .env
+│   └── settings.py
 ├── domain/
-│   └── models.py        # SearchRequest, SearchResponse, Source
+│   └── models.py
 └── helpers/
-    ├── open_ai_helper.py  # Клиент OpenAI (sync/async, whisper, vision)
-    ├── tghelper.py        # Утилиты для Telegram/aiogram (клавиатуры, пагинация)
-    ├── texthelper.py      # Текстовые хелперы
-    └── timehelper.py      # Декоратор замера времени async-функций
+    ├── open_ai_helper.py
+    ├── tghelper.py
+    ├── texthelper.py
+    └── timehelper.py
 ```
 
-Вспомогательные файлы вне основного деплоя: `someee.py` (локальный тест запроса к `/search`).
-
-## API
-
-| Метод | Путь | Описание |
-|-------|------|----------|
-| `GET` | `/` | Проверка, что сервис живой. Ответ: `{"Hello":"World"}` |
-| `POST` | `/search` | Текстовый запрос к OpenAI (JSON: `prompt`, опционально `model`, `source`) |
-| `POST` | `/alice` | Webhook для навыка Алисы (тело — JSON от Яндекса) |
-
-Пример `/search`:
-
-```json
-{
-  "prompt": "Привет",
-  "model": "gpt-4o-mini",
-  "source": "OTHER"
-}
-```
-
-Для Алисы в облачной функции Яндекса укажите URL: `https://mishavoyager.fyi/alice`.
-
-## Переменные окружения
-
-Файл `.env` (не в git):
-
-| Переменная | Описание |
-|------------|----------|
-| `OPENAI_API_KEY` | Ключ OpenAI |
-| `DRY_MODE` | `true` — без реальных запросов к OpenAI (тестовые ответы) |
-
-## Запуск
-
-### Docker Compose (продакшен)
+## Быстрый старт
 
 ```bash
+cd /root/projects/open_ai_requester
+cp .env.example .env
+# заполните OPENAI_API_KEY
 docker compose up -d --build
 ```
-
-Контейнеры:
-
-- **voyager_server** — FastAPI на порту `7999`
-- **voyager_nginx** — nginx на `80`/`443`, SSL из `/etc/letsencrypt`, прокси `/callback` и `/health` на Spotify OAuth бота (`host:8888`)
 
 Проверка:
 
 ```bash
 curl -sk https://mishavoyager.fyi/
+curl -sk https://mishavoyager.fyi/health   # Spotify OAuth health (pet_project bot)
 docker compose ps
 ```
 
-### Локально без Docker
+## API
+
+| Метод | Путь | Описание |
+|-------|------|----------|
+| `GET` | `/` | Health check. Ответ: `{"Hello":"World"}` |
+| `POST` | `/search` | Запрос к OpenAI (`prompt`, опционально `model`, `source`) |
+| `POST` | `/alice` | Webhook навыка Яндекс.Алисы |
+
+URL для Алисы: `https://mishavoyager.fyi/alice`.
+
+## Переменные окружения
+
+| Переменная | Обязательна | Описание |
+|------------|-------------|----------|
+| `OPENAI_API_KEY` | да | Ключ OpenAI |
+| `DRY_MODE` | да | `true` — без реальных запросов к OpenAI |
+
+## nginx
+
+- Домен: **mishavoyager.fyi**
+- SSL: `/etc/letsencrypt/live/mishavoyager.fyi/` на хосте
+- `/` → FastAPI (`app:7999`)
+- `/callback`, `/health` → Spotify OAuth бота на хосте (`host.docker.internal:8888`)
+
+## Локальная разработка
 
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-dev.txt
 python -m main
 ```
 
 Сервис слушает `http://0.0.0.0:7999`.
 
-## SSL и домен
-
-- Домен: **mishavoyager.fyi**
-- Сертификаты Let's Encrypt на хосте: `/etc/letsencrypt/live/mishavoyager.fyi/`
-- Выпуск/обновление (порты 80/443 свободны, nginx остановлен):
+## Типизация и тесты
 
 ```bash
-certbot certonly --standalone -d mishavoyager.fyi
-```
-
-## Зависимости
-
-Основные: FastAPI, uvicorn, OpenAI SDK, pydantic-settings. В `requirements.txt` также aiogram, SQLAlchemy, alembic, asyncpg — задел под Telegram-бота и БД; в текущем `main.py` не используются.
-
-## Типизация
-
-```bash
+pip install -r requirements-dev.txt
 mypy .
+pytest
 ```
