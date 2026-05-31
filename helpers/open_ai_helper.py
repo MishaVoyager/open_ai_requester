@@ -9,6 +9,9 @@ from config.settings import CommonSettings
 
 token = CommonSettings().OPENAI_API_KEY
 
+_client: Optional[OpenAI] = None
+_async_client: Optional[AsyncOpenAI] = None
+
 
 async def generate_text_async(
         content: str,
@@ -122,19 +125,52 @@ def improve_transcript_by_gpt(transcript: str) -> str:
 class GPTModel(StrEnum):
     gpt_4o_mini = "gpt-4o-mini"
     gpt_41_nano = "gpt-4.1-nano"
+    gpt_54_nano = "gpt-5.4-nano"
+
+
+ALICE_MODEL = GPTModel.gpt_54_nano.value
+ALICE_SYSTEM_MESSAGE = {
+    "role": "system",
+    "content": (
+        "Ты голосовой помощник Яндекс.Алисы. "
+        "Отвечай кратко: одно или два коротких предложения, простым разговорным языком."
+    ),
+}
+
+
+async def generate_alice_reply_async(question: str) -> ChatCompletionMessage:
+    completion = await get_async_client().chat.completions.create(
+        model=ALICE_MODEL,
+        store=False,
+        max_completion_tokens=120,
+        messages=[
+            ALICE_SYSTEM_MESSAGE,
+            {"role": "user", "content": question},
+        ],  # type: ignore
+    )
+    logging.info(
+        f"Запрос Алисы к {completion.model} использовал {completion.usage.total_tokens} токенов"
+    )
+    return completion.choices[0].message
 
 
 def get_client() -> OpenAI:
-    return OpenAI(
-        api_key=token,
-        organization="org-ivGGIRGxUk5rZmvxkoypdUUy",
-        project="proj_t7kgt6Awz7m2knmH4gL0xeh2"
-    )
+    global _client
+    if _client is None:
+        _client = OpenAI(
+            api_key=token,
+            organization="org-ivGGIRGxUk5rZmvxkoypdUUy",
+            project="proj_t7kgt6Awz7m2knmH4gL0xeh2"
+        )
+    return _client
 
 
 def get_async_client() -> AsyncOpenAI:
-    return AsyncOpenAI(
-        api_key=token,
-        organization="org-ivGGIRGxUk5rZmvxkoypdUUy",
-        project="proj_t7kgt6Awz7m2knmH4gL0xeh2"
-    )
+    global _async_client
+    if _async_client is None:
+        _async_client = AsyncOpenAI(
+            api_key=token,
+            organization="org-ivGGIRGxUk5rZmvxkoypdUUy",
+            project="proj_t7kgt6Awz7m2knmH4gL0xeh2"
+        )
+    return _async_client

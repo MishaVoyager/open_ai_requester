@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 
 from config.settings import CommonSettings
 from domain.models import SearchRequest, SearchResponse
-from helpers.open_ai_helper import generate_text, generate_text_async, GPTModel
+from helpers.open_ai_helper import generate_text, generate_alice_reply_async
 from helpers.timehelper import measure_time_async
 
 app = FastAPI()
@@ -68,7 +68,7 @@ async def ask(question: str, user_id: str) -> str:
         await asyncio.sleep(random.randint(3, 25))
         return "Ответик пришел"
     else:
-        result = await generate_text_async(question, GPTModel.gpt_41_nano.value)
+        result = await generate_alice_reply_async(question)
         return result.refusal if result.refusal else result.content
 
 
