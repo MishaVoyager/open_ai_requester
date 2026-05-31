@@ -126,9 +126,10 @@ class GPTModel(StrEnum):
     gpt_4o_mini = "gpt-4o-mini"
     gpt_41_nano = "gpt-4.1-nano"
     gpt_54_nano = "gpt-5.4-nano"
+    gpt_54_mini = "gpt-5.4-mini"
 
 
-ALICE_MODEL = GPTModel.gpt_54_nano.value
+ALICE_MODEL = GPTModel.gpt_54_mini.value
 ALICE_SYSTEM_MESSAGE = {
     "role": "system",
     "content": (
@@ -137,16 +138,22 @@ ALICE_SYSTEM_MESSAGE = {
     ),
 }
 
+ALICE_MAX_HISTORY_TURNS = 10
 
-async def generate_alice_reply_async(question: str) -> ChatCompletionMessage:
+
+async def generate_alice_reply_async(
+    question: str,
+    history: Optional[list] = None,
+) -> ChatCompletionMessage:
+    messages = [ALICE_SYSTEM_MESSAGE]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": question})
     completion = await get_async_client().chat.completions.create(
         model=ALICE_MODEL,
         store=False,
         max_completion_tokens=120,
-        messages=[
-            ALICE_SYSTEM_MESSAGE,
-            {"role": "user", "content": question},
-        ],  # type: ignore
+        messages=messages,  # type: ignore
     )
     logging.info(
         f"Запрос Алисы к {completion.model} использовал {completion.usage.total_tokens} токенов"
