@@ -1,16 +1,25 @@
 import asyncio
 import logging
 import random
+from collections import defaultdict
+from typing import Dict, List
 
 import uvicorn
 from fastapi import FastAPI, Request
 
 from config.settings import CommonSettings
 from domain.models import SearchRequest, SearchResponse
-from helpers.open_ai_helper import generate_text, generate_alice_reply_async
+from helpers.open_ai_helper import (
+    generate_text,
+    generate_alice_reply_async,
+    ALICE_MAX_HISTORY_TURNS,
+)
 from helpers.timehelper import measure_time_async
 
 app = FastAPI()
+
+# In-memory store: user_id -> list of {role, content} dicts (excluding system message)
+_alice_history: Dict[str, List[dict]] = defaultdict(list)
 
 
 @app.get("/")
@@ -68,8 +77,15 @@ async def ask(question: str, user_id: str) -> str:
         await asyncio.sleep(random.randint(3, 25))
         return "Ответик пришел"
     else:
-        result = await generate_alice_reply_async(question)
-        return result.refusal if result.refusal else result.content
+        history = _alice_history[user_id]
+        result = await generate_alice_reply_async(question, history=history)
+        answer = result.refusal if result.refusal else result.content
+        history.append({"role": "user", "content": question})
+        history.append({"role": "assistant", "content": answer})
+        # Keep only last N turns (each turn = 2 messages)
+        if len(history) > ALICE_MAX_HISTORY_TURNS * 2:
+            _alice_history[user_id] = history[-(ALICE_MAX_HISTORY_TURNS * 2):]
+        return answer
 
 
 if __name__ == "__main__":
