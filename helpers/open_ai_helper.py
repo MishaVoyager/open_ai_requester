@@ -127,9 +127,10 @@ class GPTModel(StrEnum):
     gpt_41_nano = "gpt-4.1-nano"
     gpt_54_nano = "gpt-5.4-nano"
     gpt_54_mini = "gpt-5.4-mini"
+    gpt_55_instant = "chat-latest"
 
 
-ALICE_MODEL = GPTModel.gpt_54_mini.value
+ALICE_MODEL = GPTModel.gpt_55_instant.value
 ALICE_SYSTEM_MESSAGE = {
     "role": "system",
     "content": (
