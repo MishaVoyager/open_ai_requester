@@ -140,6 +140,8 @@ ALICE_SYSTEM_MESSAGE = {
 }
 
 ALICE_MAX_HISTORY_TURNS = 10
+# chat-latest spends part of the budget on reasoning tokens; 120 is not enough for content.
+ALICE_MAX_COMPLETION_TOKENS = 300
 
 
 async def generate_alice_reply_async(
@@ -153,7 +155,7 @@ async def generate_alice_reply_async(
     completion = await get_async_client().chat.completions.create(
         model=ALICE_MODEL,
         store=False,
-        max_completion_tokens=120,
+        max_completion_tokens=ALICE_MAX_COMPLETION_TOKENS,
         messages=messages,  # type: ignore
     )
     logging.info(
