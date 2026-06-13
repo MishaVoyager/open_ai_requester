@@ -45,16 +45,29 @@ async def search(request: SearchRequest) -> SearchResponse:
     return response
 
 
+def _extract_alice_question(request_data: dict) -> str:
+    request_section = request_data.get("request") or {}
+    command = (request_section.get("command") or "").strip()
+    utterance = (request_section.get("original_utterance") or "").strip()
+    return command or utterance
+
+
 @app.post("/alice")
 async def answer_to_alice_user(request: Request) -> dict:
     request_data = await request.json()
     logging.info(str(request_data))
+    if not isinstance(request_data, dict):
+        logging.warning("Invalid Alice payload: expected JSON object")
+        return {
+            "version": "1.0",
+            "response": {"text": "Ошибка формата запроса.", "end_session": True},
+        }
     response = get_response_template(request_data)
-    if not request_data['request']['original_utterance']:
+    question = _extract_alice_question(request_data)
+    if not question:
         response["response"]["text"] = "Спрашивайте!"
         return response
-    question: str = request_data['request']['original_utterance']
-    user_id = request_data["session"]["user_id"]
+    user_id = request_data.get("session", {}).get("user_id") or "anonymous"
     answer = await ask(question, user_id)
     logging.info(f"answer: {answer}")
     response["response"]["text"] = answer
@@ -63,8 +76,8 @@ async def answer_to_alice_user(request: Request) -> dict:
 
 def get_response_template(request_data: dict) -> dict:
     return {
-        'session': request_data['session'],
-        'version': request_data['version'],
+        'session': request_data.get('session', {}),
+        'version': request_data.get('version', '1.0'),
         'response': {
             'end_session': False
         }
@@ -79,7 +92,9 @@ async def ask(question: str, user_id: str) -> str:
     else:
         history = _alice_history[user_id]
         result = await generate_alice_reply_async(question, history=history)
-        answer = result.refusal if result.refusal else result.content
+        answer = (result.refusal or result.content or "").strip()
+        if not answer:
+            answer = "Не смогла сформулировать ответ, попробуйте переформулировать вопрос."
         history.append({"role": "user", "content": question})
         history.append({"role": "assistant", "content": answer})
         # Keep only last N turns (each turn = 2 messages)
