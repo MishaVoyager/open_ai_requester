@@ -9,8 +9,10 @@ HTTP-сервис на FastAPI для запросов к OpenAI: универс
 ```
 .
 ├── main.py                 # FastAPI-приложение (uvicorn :7999)
-├── docker-compose.yml      # Docker Compose: app + nginx
+├── docker-compose.yml      # Docker Compose: app + nginx + Hysteria 2 (profile `vpn`)
 ├── Dockerfile
+├── hysteria/               # контейнер Hysteria 2 (UDP/443)
+├── .env.hysteria.example   # шаблон VPN-секретов
 ├── nginx.conf              # HTTPS, прокси на app:7999 и Spotify OAuth
 ├── requirements.txt        # runtime-зависимости
 ├── requirements-dev.txt    # mypy, pytest
@@ -66,6 +68,19 @@ URL для Алисы: `https://mishavoyager.fyi/alice`.
 - SSL: `/etc/letsencrypt/live/mishavoyager.fyi/` на хосте
 - `/` → FastAPI (`app:7999`)
 - `/callback`, `/health` → Spotify OAuth бота на хосте (`host.docker.internal:8888`)
+
+## Hysteria 2
+
+Быстрый VPN работает отдельным контейнером на UDP/443 и не конфликтует с nginx/Outline на TCP/443. Образ собирается из `hysteria/Dockerfile`; версия Hysteria и digest базового образа закреплены. Секреты хранятся только в `.env.hysteria` и в образ не попадают.
+
+```bash
+cp .env.hysteria.example .env.hysteria
+# заменить все replace_me случайными URL-safe секретами
+docker compose --profile vpn up -d --build hysteria
+docker compose --profile vpn logs -f hysteria
+```
+
+Конфигурация использует действующий сертификат `mishavoyager.fyi`, HTTP/3 masquerade на локальный сайт, QUIC BBR без Brutal и блокирует доступ клиентов к приватным адресам сервера.
 
 ## Локальная разработка
 
