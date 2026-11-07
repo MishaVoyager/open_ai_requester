@@ -11,15 +11,45 @@ services:
   nginx:
     image: nginx:latest
     container_name: voyager_nginx
+    network_mode: host
     restart: unless-stopped
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-    ports:
-      - "80:80"
-      - "443:443"
     volumes:
       - "/etc/letsencrypt:/etc/letsencrypt:ro"
       - "./nginx.conf:/etc/nginx/conf.d/default.conf:ro"
+      - "/var/www/certbot:/var/www/certbot:ro"
+      - "/var/www/outline-keys:/var/www/outline-keys:ro"
+    depends_on:
+      app:
+        condition: service_started
+  hysteria:
+    profiles: ["vpn"]
+    build:
+      context: ./hysteria
+    image: open-ai-requester-hysteria:2.13.0
+    container_name: voyager_hysteria
+    network_mode: host
+    restart: unless-stopped
+    env_file:
+      - .env.hysteria
+    volumes:
+      - "/etc/letsencrypt:/etc/letsencrypt:ro"
+    read_only: true
+    tmpfs:
+      - /run/hysteria:rw,noexec,nosuid,size=1m,mode=0700
+    cap_drop:
+      - ALL
+    cap_add:
+      - NET_BIND_SERVICE
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 384m
+    pids_limit: 128
+    stop_grace_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     depends_on:
       app:
         condition: service_started
